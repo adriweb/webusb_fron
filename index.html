@@ -2,11 +2,80 @@
 <html lang="en">
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>webusb_fron navnet</title>
+    <link rel="stylesheet" href="libs/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <link href="libs/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 
 <body>
-    <script type="module" src="main.js"></script>
-</body>
 
+<header>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <a class="navbar-brand" href="#">WebUSBTI</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="https://github.com/adriweb/webusbti" target="_blank">GitHub repo</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+
+<main role="main" class="container">
+    <div class="mt-3">
+        <h2>webusb_fron navnet</h2>
+    </div>
+
+    <p>
+        In order to use this PoC you need to <a href="#" id="grantConnect">grant this site permission to access the TI calc(s) first.</a>
+    </p>
+
+    <div class="card deviceCard" id="deviceCardTemplate">
+        <h4 class="card-header">calc name</h4>
+        <div class="card-body">
+            <p class="card-text deviceDetails">device details here</p>
+            <hr>
+            <div class="deviceActionButtons">
+                <button class="btn btn-primary btn-sm" data-action="receiveOS"><i class="fa fa-file" aria-hidden="true"></i> Receive OS</button>
+            </div>
+            <hr>
+            <p class="card-text"><b>USB raw frames log</b>:
+                <span class="pull-right">
+                <label class="form-check-label">
+                    <input class="form-check-input autoClearLog" type="checkbox">
+                    Auto-clear on action
+                </label>
+                &nbsp; <button class="btn btn-outline-danger btn-sm clearLog"><i class="fa fa-trash" aria-hidden="true"></i> Clear</button>
+            </span>
+            </p>
+            <div class="deviceLog"></div>
+        </div>
+    </div>
+
+    <div id="devicesContainer">
+
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <span class="text-muted"><a href="https://wicg.github.io/webusb/">WebUSB specification</a></span>
+    </div>
+</footer>
+
+<script src="libs/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="libs/js/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+<script src="libs/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+<script src="libs/js/moment.min.js" integrity="sha256-zG8v+NWiZxmjNi+CvUYnZwKtHzFtdO8cAKUIdB8+U9I=" crossorigin="anonymous"></script>
+
+<script type="text/javascript" src="webusbti.js"></script>
+<script type="module" src="main.js"></script>
+
+</body>
 </html>

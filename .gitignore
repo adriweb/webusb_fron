@@ -1,3 +1,6 @@
 cs/
 .idea/
+
 *.js
+!libs/
+!webusbti.js
