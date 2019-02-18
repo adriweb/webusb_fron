@@ -3,4 +3,5 @@ cs/
 
 *.js
 !libs/
+!libs/js
 !webusbti.js
