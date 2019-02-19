@@ -6,8 +6,6 @@ const thinsp = "<span class='thinsp'></span>";
 
 const webusb = {};
 
-let _globalInterval = 0;
-
 function hexStrToArrayBuffer(hexStr)
 {
     return new Uint8Array(hexStr.match(/([\da-f]{2})\s*/gi).map((h) => parseInt(h, 16)));
@@ -149,10 +147,13 @@ function findOrCreateDevice(rawDevice)
             outPacketSize: epOut.packetSize,
             inPacketSize : epIn.packetSize
         };
+
+        this.ready = true;
     };
 
     webusb.Device.prototype.disconnect = function ()
     {
+        this.ready = false;
         return this.device_.close();
     };
 
@@ -193,16 +194,16 @@ function findOrCreateDevice(rawDevice)
     };
     webusb.Device.prototype.receiveOS = function ()
     {
-        clearInterval(_globalInterval);
-        clearInterval();
         let dev = this;
         const ns = new NspireService(this);
+        async function osRecvAndTryPkt() {
+            const buf = await dev.transferIn().then(dev.osRecvHandler.bind(dev));
+            await ns.handleInData(buf);
+            dev.ready && (await setTimeout(osRecvAndTryPkt, 25));
+        }
         this.connect().then(async () =>
         {
-            _globalInterval = setInterval(async function () {
-                const buf = await dev.transferIn().then(dev.osRecvHandler.bind(dev));
-                await ns.handleInData(buf);
-            }, 50);
+            await setTimeout(osRecvAndTryPkt, 25);
         })
         //.then(() => this.disconnect());
     };
@@ -244,8 +245,6 @@ function disconnectDevice(rawDevice)
 function handleDisconnectEvent(event)
 {
     console.log('disconnect event', event.device);
-    clearInterval(_globalInterval);
-    clearInterval();
     disconnectDevice(event.device);
 }
 
