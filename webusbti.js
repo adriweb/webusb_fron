@@ -1,8 +1,12 @@
+import { NspireService } from "./NavNet/NspireService.js";
+
 const deviceCardTemplate = $("#deviceCardTemplate");
 const devicesContainer   = $("#devicesContainer");
 const thinsp = "<span class='thinsp'></span>";
 
 const webusb = {};
+
+let _globalInterval = 0;
 
 function hexStrToArrayBuffer(hexStr)
 {
@@ -52,7 +56,8 @@ function findOrCreateDevice(rawDevice)
             //{ vendorId: 0x0451, productId: 0xE003 }, // 84+
             //{ vendorId: 0x0451, productId: 0xE004 }, // 89T...
             //{ vendorId: 0x0451, productId: 0xE008 }, // 84+ SE/CSE/CE...
-            { vendorId: 0x0451 /*, productId: 0xE012 */ }, // Nspire (all models)
+            //{ vendorId: 0x0451, productId: 0xE012 }, // Nspire (all models)
+            { vendorId: 0x0451 }, // all TI
         ];
         return navigator.usb.requestDevice({filters: filters}).then(device =>
         {
@@ -179,13 +184,27 @@ function findOrCreateDevice(rawDevice)
         this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
     };
 
+    webusb.Device.prototype.osRecvHandler = function(result) {
+        console.log(result.data)
+        let str = ""+buf2hex(result.data.buffer);
+        str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
+        this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
+        return result.data.buffer;
+    };
     webusb.Device.prototype.receiveOS = function ()
     {
+        clearInterval(_globalInterval);
+        clearInterval();
+        let dev = this;
+        const ns = new NspireService(this);
         this.connect().then(async () =>
         {
-            // TODO here
+            _globalInterval = setInterval(async function () {
+                const buf = await dev.transferIn().then(dev.osRecvHandler.bind(dev));
+                await ns.handleInData(buf);
+            }, 50);
         })
-        .then(() => this.disconnect());
+        //.then(() => this.disconnect());
     };
 
 })();
@@ -225,6 +244,8 @@ function disconnectDevice(rawDevice)
 function handleDisconnectEvent(event)
 {
     console.log('disconnect event', event.device);
+    clearInterval(_globalInterval);
+    clearInterval();
     disconnectDevice(event.device);
 }
 
