@@ -6,8 +6,6 @@ const _destinationAddress = 0x6401;
 
 // @ts-ignore
 const { createWriteStream } = window.streamSaver;
-const _os_fileStream = createWriteStream('os.tcc');
-const _os_writer = _os_fileStream.getWriter();
 
 export class NspireService
 {
@@ -21,7 +19,9 @@ export class NspireService
     private _OSSize: number = 0;
     private _receivedFirstPacket: boolean = false;
 
-    private _device: any = null;
+    private _device: any;
+    private _os_fileStream : any = null;
+    private _os_writer : any = null;
 
     constructor(device: any)
     {
@@ -30,7 +30,7 @@ export class NspireService
 
     public async handleInData(buffer: Uint8Array)
     {
-        console.log(buffer.length)
+        console.log("buffer.length = " + buffer.length);
         buffer.forEach && buffer.forEach((element) => { this._queue.enqueue(element); });
         await this._TryConstructPacket();
     }
@@ -99,6 +99,8 @@ export class NspireService
                                            ((packet.Data[3] << 8) & 0x0000FFFF) | (packet.Data[4] & 0xFF);
                             this._receivedFirstPacket = false;
 
+                            this._os_fileStream = createWriteStream('os.tcc');
+
                             //Let the other device know we're ready to start receiving the OS data
                             await this._SendData(new RawPacket(_sourceAddress, ServiceId.InstallOS, _destinationAddress, packet.SourceServiceId, 0x00,
                                 Uint8Array.of(0x04)), ++this._nextSequenceId);
@@ -109,8 +111,9 @@ export class NspireService
                         case 0x05:
                         {
                             //This is OS data, receive and write it
-
-                            _os_writer.write(packet.Data.subarray(1));
+                            if(!this._os_fileStream) throw new Error('_os_fileStream null, wut?');
+                            if(!this._os_writer) { this._os_writer = this._os_fileStream.getWriter(); }
+                            this._os_writer.write(packet.Data.subarray(1));
 
                             this._OSSize -= (packet.Data.length - 1);
 
@@ -124,7 +127,7 @@ export class NspireService
                             if (this._OSSize <= 0 || packet.Data.length < 0xFE)
                             {
                                 //We're done receiving the OS, so let the other calculator know we're done (100%)
-                                _os_writer.close();
+                                this._os_writer.close();
                                 await this._SendData(new RawPacket(_sourceAddress, ServiceId.InstallOS, _destinationAddress, ServiceId.InstallOS, 0x00,
                                     Uint8Array.of(0x06, 0x64)), ++this._nextSequenceId);
                             }
