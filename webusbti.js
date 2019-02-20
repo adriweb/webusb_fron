@@ -4,6 +4,10 @@ const deviceCardTemplate = $("#deviceCardTemplate");
 const devicesContainer   = $("#devicesContainer");
 const thinsp = "<span class='thinsp'></span>";
 
+const delay = ms => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 const webusb = {};
 
 function hexStrToArrayBuffer(hexStr)
@@ -73,6 +77,7 @@ function findOrCreateDevice(rawDevice)
         this.logDeviceStrings();
         this.createDeviceGUIIfNeeded();
 
+        this.connect();
         // todo here: get device info/capabilities... ?
     };
 
@@ -108,7 +113,7 @@ function findOrCreateDevice(rawDevice)
             switch ($btn.data('action'))
             {
                 case 'receiveOS':
-                    $btn.on('click', () => { device.receiveOS() });
+                    $btn.on('click', () => { device.receiveOS(); $btn[0].disabled = true; });
                     break;
             }
         });
@@ -149,6 +154,18 @@ function findOrCreateDevice(rawDevice)
         };
 
         this.ready = true;
+
+        const ns = new NspireService(this);
+        let readLoop = async () => {
+            const data = await this.transferIn();
+            const u8buf = await this.osRecvHandler(data);
+            //await delay(20);
+            await ns.handleInData(u8buf);
+            if (this.ready) {
+                await readLoop();
+            }
+        };
+        await readLoop();
     };
 
     webusb.Device.prototype.disconnect = function ()
@@ -190,16 +207,6 @@ function findOrCreateDevice(rawDevice)
         str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
         this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
         return new Uint8Array(result.data.buffer);
-    };
-    webusb.Device.prototype.receiveOS = function ()
-    {
-        let dev = this;
-        async function osRecvAndTryPkt() {
-            await dev.transferIn().then(dev.osRecvHandler.bind(dev)).then(ns.handleInData.bind(ns));
-        }
-        const ns = new NspireService(this, osRecvAndTryPkt);
-        this.connect().then(osRecvAndTryPkt)
-        //.then(() => this.disconnect());
     };
 
 })();

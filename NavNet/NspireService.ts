@@ -25,17 +25,15 @@ export class NspireService
     private _os_fileStream : any = null;
     private _os_writer : any = null;
 
-    constructor(device: any, callAfterDone: any)
+    constructor(device: any)
     {
         this._device = device;
-        this._callAfterDone = async function() { await callAfterDone(device); };
     }
 
     public async handleInData(buffer: Uint8Array)
     {
         this._queue.enqueue(...buffer);
-        await this._TryConstructPacket();
-        await setTimeout(this._callAfterDone, 1);
+        return await this._TryConstructPacket();
     }
 
     private async _HandlePacket(packet: RawPacket)
@@ -44,6 +42,7 @@ export class NspireService
 
         //Deal with packets where ACK byte takes priority
         if (packet.ACK == 0x0A) {
+            console.info('packet.ACK == 0x0A');
             handled = true;
         }
 
@@ -55,6 +54,8 @@ export class NspireService
                 case ServiceId.ServiceDisconnection:
                 {
                     console.info('case ServiceId.ServiceDisconnection');
+                    this._os_writer && this._os_writer.close();
+                    this._os_writer = null;
                     //Acknowledge the request
                     await this._SendData(new RawPacket(_sourceAddress, packet.Sequence == 0 ? 0x00FE : 0x00FF, _destinationAddress,
                         ((packet.Data[0] << 8) | packet.Data[1]), 0x0A,
@@ -108,6 +109,7 @@ export class NspireService
 
                             this._receivedFirstPacket = false;
 
+                            this._os_writer && this._os_writer.close(); this._os_writer = null;
                             this._os_fileStream = createWriteStream('os.tcc');
                             console.info('      InstallOS -> _os_fileStream created');
 
@@ -224,7 +226,7 @@ export class NspireService
             }
         }
 
-        // return handled;
+        return handled;
     }
 
     private async _SendData(packet: RawPacket, sequenceId: number)
@@ -235,16 +237,16 @@ export class NspireService
 
     private async _TryConstructPacket()
     {
+        let handled = false;
+
         const PACKET_HEADER_SIZE = 16;
 
         //Get the raw packet header
         while (this._incompletePacket.length < PACKET_HEADER_SIZE)
         {
-            let count = this._queue.size();
-            if (count == 0) {
+            if (this._queue.size() == 0) {
                 break;
             }
-
             this._incompletePacket.push(<number>this._queue.dequeue());
         }
 
@@ -256,11 +258,9 @@ export class NspireService
             const size = <number>this._incompletePacket[12];
             while (this._incompletePacketData.length < size)
             {
-                const count = this._queue.size();
-                if (count == 0) {
+                if (this._queue.size() == 0) {
                     break;
                 }
-
                 this._incompletePacketData.push(<number>this._queue.dequeue());
             }
 
@@ -273,8 +273,10 @@ export class NspireService
                 this._incompletePacket = [];
                 this._incompletePacketData = [];
 
-                await this._HandlePacket(packet);
+                handled = await this._HandlePacket(packet);
             }
         }
+
+        return handled;
     }
 }
