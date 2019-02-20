@@ -17,8 +17,7 @@ class Queue {
     dequeue(count = 1)
     {
         //pull out the first item from the queue
-        this._items.splice(0, count);
-        return this._items;
+        return this._items.shift();
     }
 
     peek()
