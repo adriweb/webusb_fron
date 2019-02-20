@@ -155,12 +155,12 @@ function findOrCreateDevice(rawDevice)
 
         this.ready = true;
 
-        const ns = new NspireService(this);
+        this.ns = new NspireService(this);
         let readLoop = async () => {
             const data = await this.transferIn();
             const u8buf = await this.osRecvHandler(data);
             //await delay(20);
-            await ns.handleInData(u8buf);
+            await this.ns.handleInData(u8buf);
             if (this.ready) {
                 await readLoop();
             }
@@ -234,10 +234,12 @@ function disconnectDevice(rawDevice)
             .then(s =>
             {
                 console.log("disconnected", device);
+                try { device.ns && device.ns.closeOSFile(); } catch (e) { }
                 cleanUpDevice(device);
             }, e =>
             {
                 console.log("nothing to disconnect", device);
+                try { device.ns && device.ns.closeOSFile(); } catch (e) { }
                 cleanUpDevice(device);
             });
     }

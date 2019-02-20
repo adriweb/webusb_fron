@@ -30,6 +30,11 @@ export class NspireService
         this._device = device;
     }
 
+    public closeOSFile()
+    {
+        this._os_writer && this._os_writer.close();
+    }
+
     public async handleInData(buffer: Uint8Array)
     {
         this._queue.enqueue(...buffer);
@@ -54,7 +59,7 @@ export class NspireService
                 case ServiceId.ServiceDisconnection:
                 {
                     console.info('case ServiceId.ServiceDisconnection');
-                    this._os_writer && this._os_writer.close();
+                    this.closeOSFile();
                     this._os_writer = null;
                     //Acknowledge the request
                     await this._SendData(new RawPacket(_sourceAddress, packet.Sequence == 0 ? 0x00FE : 0x00FF, _destinationAddress,
@@ -109,7 +114,7 @@ export class NspireService
 
                             this._receivedFirstPacket = false;
 
-                            this._os_writer && this._os_writer.close(); this._os_writer = null;
+                            this.closeOSFile(); this._os_writer = null;
                             this._os_fileStream = createWriteStream('os.tcc');
                             console.info('      InstallOS -> _os_fileStream created');
 
