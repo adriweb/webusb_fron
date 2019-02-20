@@ -35,6 +35,11 @@ export class NspireService
         this._os_writer && this._os_writer.close();
     }
 
+    public logRemainingOSFile()
+    {
+        this._os_writer && this._device.writeOSSizeLeft(this._OSSize);
+    }
+
     public async handleInData(buffer: Uint8Array)
     {
         this._queue.enqueue(...buffer);
@@ -71,7 +76,6 @@ export class NspireService
                     break;
                 }
                 default:
-                    console.info('case unknown: packet.SourceServiceId = ' + packet.SourceServiceId);
                     break;
             }
         }
@@ -83,7 +87,7 @@ export class NspireService
             {
                 case ServiceId.InstallOS:
                 {
-                    console.info('case ServiceId.InstallOS');
+                    //console.info('case ServiceId.InstallOS');
                     //Acknowledge the request
                     await this._SendData(new RawPacket(_sourceAddress, packet.Sequence == 0 ? 0x00FE : 0x00FF, _destinationAddress,
                         packet.SourceServiceId, 0x0A,

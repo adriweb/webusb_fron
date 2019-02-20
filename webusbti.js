@@ -8,6 +8,17 @@ const delay = ms => {
     return new Promise(resolve => setTimeout(resolve, ms));
 };
 
+let _myInterval;
+const clearMyInterval = function()
+{
+    try {
+        if (typeof(_myInterval) !== 'undefined') {
+            clearInterval(_myInterval);
+            _myInterval = undefined;
+        }
+    } catch (e) { }
+};
+
 const webusb = {};
 
 function hexStrToArrayBuffer(hexStr)
@@ -19,6 +30,11 @@ function buf2hex(buffer)
 {
     // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('').toUpperCase();
+}
+
+function uint8_to_hex(buffer)
+{
+    return Array.prototype.map.call(buffer, x => ('00' + x.toString(16)).slice(-2)).join('').toUpperCase();
 }
 
 function chunk_buffer(data)
@@ -165,21 +181,24 @@ function findOrCreateDevice(rawDevice)
                 await readLoop();
             }
         };
+        _myInterval = setInterval(this.ns.logRemainingOSFile.bind(this.ns), 2000);
         await readLoop();
     };
 
     webusb.Device.prototype.disconnect = function ()
     {
+        clearMyInterval();
         this.ready = false;
         return this.device_.close();
     };
 
     webusb.Device.prototype.transferOut = function (data)
     {
-        //console.debug(`transferOut\t| data = ${data}`);
-        let str = ""+buf2hex(data);
-        str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
-        this.gui.log[0].innerHTML += `<span class='out'>${moment().format('HH:mm:ss.SSS')} &gt; ${str}</span></br>`;
+        //const strorig = ""+buf2hex(data);
+        //const str = strorig.substr(0, 8) + thinsp + strorig.substr(8, 2) + thinsp + strorig.substr(10);
+        //this.gui.log[0].innerHTML += `<span class='out'>${moment().format('HH:mm:ss.SSS')} &gt; ${str}</span></br>`;
+        //console.debug(`transferOut\t| data = ${strorig}`);
+
         /************************/
         return this.device_.transferOut(this.config.outEPnum, data);
     };
@@ -197,16 +216,26 @@ function findOrCreateDevice(rawDevice)
 
     webusb.Device.prototype.responseHandler = function(result)
     {
-        let str = ""+buf2hex(result.data.buffer);
-        str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
-        this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
+        //const u8buf = new Uint8Array(result.data.buffer);
+        //const strorig = ""+uint8_to_hex(u8buf);
+        //const str = strorig.substr(0, 8) + thinsp + strorig.substr(8, 2) + thinsp + strorig.substr(10);
+        //this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
+        //console.debug(`transferIn\t| data = ${strorig}`);
+    };
+
+    webusb.Device.prototype.writeOSSizeLeft = function(sizeLeft) {
+        this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} os size left: ${sizeLeft}</span></br>`;
     };
 
     webusb.Device.prototype.osRecvHandler = function(result) {
-        let str = ""+buf2hex(result.data.buffer);
-        str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
-        this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
-        return new Uint8Array(result.data.buffer);
+
+        const u8buf = new Uint8Array(result.data.buffer);
+        //const strorig = ""+uint8_to_hex(u8buf);
+        //const str = strorig.substr(0, 8) + thinsp + strorig.substr(8, 2) + thinsp + strorig.substr(10);
+        //this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
+        //console.debug(`transferIn\t| data = ${strorig}`);
+
+        return u8buf;
     };
 
 })();
@@ -234,12 +263,12 @@ function disconnectDevice(rawDevice)
             .then(s =>
             {
                 console.log("disconnected", device);
-                try { device.ns && device.ns.closeOSFile(); } catch (e) { }
+                try { device.ns && device.ns.closeOSFile(); clearMyInterval(); } catch (e) { }
                 cleanUpDevice(device);
             }, e =>
             {
                 console.log("nothing to disconnect", device);
-                try { device.ns && device.ns.closeOSFile(); } catch (e) { }
+                try { device.ns && device.ns.closeOSFile(); clearMyInterval(); } catch (e) { }
                 cleanUpDevice(device);
             });
     }
