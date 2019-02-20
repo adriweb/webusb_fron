@@ -159,7 +159,7 @@ function findOrCreateDevice(rawDevice)
 
     webusb.Device.prototype.transferOut = function (data)
     {
-        console.debug(`transferOut\t| data = ${data}`);
+        //console.debug(`transferOut\t| data = ${data}`);
         let str = ""+buf2hex(data);
         str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
         this.gui.log[0].innerHTML += `<span class='out'>${moment().format('HH:mm:ss.SSS')} &gt; ${str}</span></br>`;
@@ -169,7 +169,7 @@ function findOrCreateDevice(rawDevice)
 
     webusb.Device.prototype.transferInWithLen = function(length)
     {
-        console.debug(`transferInWithLen\t| length = ${length}`);
+        //console.debug(`transferInWithLen\t| length = ${length}`);
         return this.device_.transferIn(this.config.inEPnum, length);
     };
 
@@ -186,7 +186,6 @@ function findOrCreateDevice(rawDevice)
     };
 
     webusb.Device.prototype.osRecvHandler = function(result) {
-        console.log(result.data)
         let str = ""+buf2hex(result.data.buffer);
         str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
         this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
