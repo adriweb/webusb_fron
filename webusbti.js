@@ -189,21 +189,16 @@ function findOrCreateDevice(rawDevice)
         let str = ""+buf2hex(result.data.buffer);
         str = str.substr(0, 8) + thinsp + str.substr(8, 2) + thinsp + str.substr(10);
         this.gui.log[0].innerHTML += `<span class='in'>${moment().format('HH:mm:ss.SSS')} &lt; ${str}</span></br>`;
-        return result.data.buffer;
+        return new Uint8Array(result.data.buffer);
     };
     webusb.Device.prototype.receiveOS = function ()
     {
         let dev = this;
-        const ns = new NspireService(this);
         async function osRecvAndTryPkt() {
-            const buf = await dev.transferIn().then(dev.osRecvHandler.bind(dev));
-            await ns.handleInData(buf);
-            dev.ready && (await setTimeout(osRecvAndTryPkt, 25));
+            await dev.transferIn().then(dev.osRecvHandler.bind(dev)).then(ns.handleInData.bind(ns));
         }
-        this.connect().then(async () =>
-        {
-            await setTimeout(osRecvAndTryPkt, 25);
-        })
+        const ns = new NspireService(this, osRecvAndTryPkt);
+        this.connect().then(osRecvAndTryPkt)
         //.then(() => this.disconnect());
     };
 

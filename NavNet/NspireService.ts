@@ -20,19 +20,22 @@ export class NspireService
     private _receivedFirstPacket: boolean = false;
 
     private _device: any;
+    private _callAfterDone: any;
+
     private _os_fileStream : any = null;
     private _os_writer : any = null;
 
-    constructor(device: any)
+    constructor(device: any, callAfterDone: any)
     {
         this._device = device;
+        this._callAfterDone = async function() { await callAfterDone(device); };
     }
 
     public async handleInData(buffer: Uint8Array)
     {
-        console.log("buffer.length = " + buffer.length);
-        buffer.forEach && buffer.forEach((element) => { this._queue.enqueue(element); });
+        this._queue.enqueue(...buffer);
         await this._TryConstructPacket();
+        await setTimeout(this._callAfterDone, 1);
     }
 
     private async _HandlePacket(packet: RawPacket)
